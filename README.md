@@ -106,6 +106,51 @@ $result = BazdidfaniApi::technicalInspections('12345678', ['per_page' => 50]);
 
 خروجی هر متد آرایهٔ JSON پاسخ سرور، شامل `data`، `links`، `meta`، `success` و `message` است. پاسخ‌های ناموفق با `Illuminate\Http\Client\RequestException` گزارش می‌شوند.
 
+## ثبت بازدید فنی
+
+برای ثبت یک بازدید فنی جدید برای شرکت متعلق به `organizationCode`:
+
+```php
+$result = $bazdidfaniApi->submitTechnicalInspection('12345678', [
+    'usage' => 'freighter', // یا 'passenger'
+    'company_usage' => 1, // 1=باربری، 2=مسافربری، 3=هر دو — مطابق companies.company_usage
+    'user_type' => 'company',
+    'smart_number' => '1234567',
+    'loader_code' => 100,
+    'technical_manager_national_code' => '0098765432',
+    // اختیاری:
+    'branch_code' => 1, // پیش‌فرض ۱ (شرکت مادر)؛ برای ثبت روی یک شعبهٔ خاص ارسال شود
+    'driver_national_code' => '0012345678',
+    'driver_phone_number' => '09120000000',
+    'Insurance_validity' => '2027-01-01',
+    'validity_technical_examination' => '2027-01-01',
+    'driver_health_card_validity' => '2027-01-01',
+    'driver_certificate_validity' => '2027-01-01',
+    'driver_birthdate' => '1370-01-01',
+]);
+```
+
+توکن به هیچ سازمان یا شعبه‌ای محدود نیست؛ اگر شرکت مقصد چند شعبه (چند `branch_code` با یک `organization_code`) داشته باشد و `branch_code` ارسال نشود، بازدید برای شعبهٔ مادر (`branch_code=1`) ثبت می‌شود.
+
+## مدیران فنی، ناوگان و داده‌های مرجع
+
+```php
+// مدیران فنی فعالِ شرکت
+$managers = $bazdidfaniApi->technicalManagers('12345678', ['per_page' => 20]);
+
+// ناوگان شرکت، با امکان جست‌وجو روی شمارهٔ هوشمند/پلاک
+$vehicles = $bazdidfaniApi->fleet('12345678', ['query' => '1234567']);
+
+// داده‌های مرجع — مستقل از شرکت، اما همچنان نیاز به هدر کد سازمان معتبر دارند
+$cities = $bazdidfaniApi->cities('12345678', ['query' => 'تهران']);
+$states = $bazdidfaniApi->states('12345678');
+$loaderTypes = $bazdidfaniApi->loaderTypes('12345678');
+```
+
+`loaderTypes` برای پر کردن `loader_code` هنگام فراخوانی `submitTechnicalInspection` استفاده می‌شود.
+
+همهٔ متدهای بالا با Facade هم در دسترس‌اند: `BazdidfaniApi::technicalManagers(...)`, `BazdidfaniApi::fleet(...)`, `BazdidfaniApi::submitTechnicalInspection(...)` و غیره.
+
 ## نمونه پاسخ‌ها
 
 ### پاسخ `technicalInspections`
@@ -242,6 +287,105 @@ $result = BazdidfaniApi::technicalInspections('12345678', ['per_page' => 50]);
     },
     "success": true,
     "message": "فهرست خوداظهاری‌ها با موفقیت دریافت شد."
+}
+```
+
+### پاسخ `submitTechnicalInspection`
+
+```json
+{
+    "success": true,
+    "message": "بازدید فنی با موفقیت ثبت شد.",
+    "data": {
+        "bazdidfani": {
+            "id": 512,
+            "code": "TECH-512"
+        }
+    }
+}
+```
+
+### پاسخ `technicalManagers`
+
+```json
+{
+    "success": true,
+    "message": "فهرست مدیران فنی شرکت با موفقیت دریافت شد.",
+    "data": [
+        {
+            "id": 7,
+            "national_code": "0098765432",
+            "full_name": "مدیر فنی نمونه",
+            "phone": "09120000000",
+            "capacity": 10,
+            "passenger_capacity": 0,
+            "freighter_capacity": 10,
+            "type": 1,
+            "start_cooperate": "2026-01-01",
+            "end_cooperate": "2027-01-01",
+            "status": 1,
+            "company": {
+                "code": "12345678",
+                "name": "شرکت نمونه"
+            }
+        }
+    ],
+    "links": { "first": "...", "last": "...", "prev": null, "next": null },
+    "meta": { "current_page": 1, "per_page": 15, "total": 1 }
+}
+```
+
+### پاسخ `fleet`
+
+```json
+{
+    "success": true,
+    "message": "فهرست ناوگان شرکت با موفقیت دریافت شد.",
+    "data": [
+        {
+            "id": 3,
+            "status": "1",
+            "vehicle": {
+                "smart_number": "1234567",
+                "plate": {
+                    "first_number": "12",
+                    "second_number": "345",
+                    "third_character": "ب",
+                    "fourth_number": "67"
+                },
+                "usage": "freighter",
+                "VIN": "VIN-1234567",
+                "date_made": "1400",
+                "validity_technical_examination": "2027-01-01T00:00:00.000000Z",
+                "loader": { "code": 100, "name": "بارگیر آزمایشی" }
+            },
+            "truck_info": {
+                "capacity": 20000,
+                "insurance_validity": "2027-01-01T00:00:00.000000Z",
+                "insurance_number": null,
+                "owner_phone_number": "09120000000",
+                "chassis_number": null,
+                "document_number": null,
+                "document_date": null
+            }
+        }
+    ],
+    "links": { "first": "...", "last": "...", "prev": null, "next": null },
+    "meta": { "current_page": 1, "per_page": 15, "total": 1 }
+}
+```
+
+### پاسخ `cities` / `states` / `loaderTypes`
+
+```json
+{
+    "success": true,
+    "message": "فهرست شهرها با موفقیت دریافت شد.",
+    "data": [
+        { "id": 1, "code": "1234", "name": "تهران", "state": { "code": "07", "name": "تهران" } }
+    ],
+    "links": { "first": "...", "last": "...", "prev": null, "next": null },
+    "meta": { "current_page": 1, "per_page": 15, "total": 1 }
 }
 ```
 

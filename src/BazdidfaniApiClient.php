@@ -37,6 +37,72 @@ class BazdidfaniApiClient
     }
 
     /**
+     * ثبت یک بازدید فنی جدید برای شرکت متعلق به کد سازمان داده‌شده.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    public function submitTechnicalInspection(string $organizationCode, array $payload): array
+    {
+        return $this->post('/api/v1/webservice/technical-inspections', $organizationCode, $payload);
+    }
+
+    /**
+     * فهرست مدیران فنی فعال شرکت.
+     *
+     * @param  array<string, int|string|null>  $query
+     * @return array<string, mixed>
+     */
+    public function technicalManagers(string $organizationCode, array $query = []): array
+    {
+        return $this->get('/api/v1/webservice/technical-managers', $organizationCode, $query);
+    }
+
+    /**
+     * فهرست ناوگان شرکت.
+     *
+     * @param  array<string, int|string|null>  $query
+     * @return array<string, mixed>
+     */
+    public function fleet(string $organizationCode, array $query = []): array
+    {
+        return $this->get('/api/v1/webservice/fleet', $organizationCode, $query);
+    }
+
+    /**
+     * فهرست شهرها (داده مرجع، مستقل از شرکت).
+     *
+     * @param  array<string, int|string|null>  $query
+     * @return array<string, mixed>
+     */
+    public function cities(string $organizationCode, array $query = []): array
+    {
+        return $this->get('/api/v1/webservice/cities', $organizationCode, $query);
+    }
+
+    /**
+     * فهرست استان‌ها (داده مرجع، مستقل از شرکت).
+     *
+     * @param  array<string, int|string|null>  $query
+     * @return array<string, mixed>
+     */
+    public function states(string $organizationCode, array $query = []): array
+    {
+        return $this->get('/api/v1/webservice/states', $organizationCode, $query);
+    }
+
+    /**
+     * فهرست انواع بارگیر، برای پر کردن loader_code هنگام ثبت بازدید (داده مرجع، مستقل از شرکت).
+     *
+     * @param  array<string, int|string|null>  $query
+     * @return array<string, mixed>
+     */
+    public function loaderTypes(string $organizationCode, array $query = []): array
+    {
+        return $this->get('/api/v1/webservice/loader-types', $organizationCode, $query);
+    }
+
+    /**
      * @param  array<string, int|string|null>  $query
      * @return array<string, mixed>
      */
@@ -46,6 +112,17 @@ class BazdidfaniApiClient
             $query,
             static fn (mixed $value): bool => $value !== null,
         ));
+
+        return $response->throw()->json();
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function post(string $path, string $organizationCode, array $payload): array
+    {
+        $response = $this->request($organizationCode)->post($path, $payload);
 
         return $response->throw()->json();
     }
